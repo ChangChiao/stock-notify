@@ -15,6 +15,13 @@ def load_stocks():
         return json.load(f)
 
 
+def load_egift_ids():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(script_dir, "egift.json")
+    with open(path, encoding="utf-8") as f:
+        return {item["id"] for item in json.load(f)}
+
+
 def deduplicate(stocks):
     seen = set()
     result = []
@@ -45,11 +52,14 @@ def filter_stocks(stocks, today):
     return upcoming, in_progress
 
 
-def format_stock(s):
-    return f"📌 {s['id']} {s['name']}\n🎁 {s['gift']}\n📆 買進期間：{s['meeting_start']} ~ {s['meeting_end']}"
+def format_stock(s, egift_ids):
+    text = f"📌 {s['id']} {s['name']}\n🎁 {s['gift']}\n📆 買進期間：{s['meeting_start']} ~ {s['meeting_end']}"
+    if s["id"] in egift_ids:
+        text += "\n⚠️支援eGift"
+    return text
 
 
-def format_message(upcoming, in_progress, today):
+def format_message(upcoming, in_progress, today, egift_ids):
     weekday = WEEKDAYS[today.weekday()]
     lines = [
         f"📋 股東會紀念品通知",
@@ -61,7 +71,7 @@ def format_message(upcoming, in_progress, today):
         lines.append("⏰ 即將開始（7日內）")
         lines.append("—————————————")
         for s in upcoming:
-            lines.append(format_stock(s))
+            lines.append(format_stock(s, egift_ids))
             lines.append("")
 
     if in_progress:
@@ -69,7 +79,7 @@ def format_message(upcoming, in_progress, today):
         lines.append("🔔 進行中（可買進）")
         lines.append("—————————————")
         for s in in_progress:
-            lines.append(format_stock(s))
+            lines.append(format_stock(s, egift_ids))
             lines.append("")
 
     total = len(upcoming) + len(in_progress)
@@ -121,6 +131,7 @@ def main():
 
     stocks = load_stocks()
     stocks = deduplicate(stocks)
+    egift_ids = load_egift_ids()
     today = datetime.now().date()
 
     upcoming, in_progress = filter_stocks(stocks, today)
@@ -129,7 +140,7 @@ def main():
         print("No stocks match notification criteria. Skipping notification.")
         return
 
-    message = format_message(upcoming, in_progress, today)
+    message = format_message(upcoming, in_progress, today, egift_ids)
     send_line_message(message, token, user_id)
     print(f"Notification sent. Upcoming: {len(upcoming)}, In progress: {len(in_progress)}")
 
