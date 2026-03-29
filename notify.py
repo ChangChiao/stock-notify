@@ -53,7 +53,7 @@ def filter_stocks(stocks, today):
 
 
 def format_stock(s, egift_ids):
-    text = f"📌 {s['id']} {s['name']}\n🎁 {s['gift']}\n📆 買進期間：{s['meeting_start']} ~ {s['meeting_end']}"
+    text = f"📌 {s['id']} {s['name']}\n🎁 {s['gift']}\n📆 投票期間：{s['meeting_start']} ~ {s['meeting_end']}"
     if s["id"] in egift_ids:
         text += "\n⚠️支援eGift"
     return text
